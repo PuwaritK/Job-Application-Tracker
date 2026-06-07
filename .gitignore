@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+.swc/
+
+# Turborepo
+.turbo/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.staging
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+
+# Prisma
+backend/prisma/generated/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+.idea/
+
+# TypeScript
+*.tsbuildinfo
