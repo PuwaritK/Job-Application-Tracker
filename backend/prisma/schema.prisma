@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,4 +5,180 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  RECRUITER
+  APPLICANT
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum ApplicationSource {
+  DIRECT
+  LINKEDIN
+  REFERRAL
+  OTHER
+}
+
+enum DocumentType {
+  RESUME
+  COVER_LETTER
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?
+  name      String
+  role      Role     @default(APPLICANT)
+  googleId  String?  @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile      ApplicantProfile?
+  applications Application[]
+  documents    Document[]
+  resumes      Resume[]
+  auditLogs    AuditLog[]
+}
+
+model ApplicantProfile {
+  id           String   @id @default(cuid())
+  phone        String?
+  location     String?
+  linkedinUrl  String?
+  portfolioUrl String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id   String       @id @default(cuid())
+  name String       @unique
+  jobs JobPosting[]
+}
+
+model JobPosting {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  location    String?
+  salary      String?
+  department  String?
+  type        JobType   @default(FULL_TIME)
+  isRemote    Boolean   @default(false)
+  status      JobStatus @default(DRAFT)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  closedAt    DateTime?
+
+  tags         Tag[]
+  applications Application[]
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  status      ApplicationStatus @default(PENDING)
+  source      ApplicationSource @default(DIRECT)
+  coverLetter String?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobId String
+  job   JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  documents  Document[]
+  interviews Interview[]
+
+  @@unique([userId, jobId])
+}
+
+model Resume {
+  id        String   @id @default(cuid())
+  title     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  documentId String   @unique
+  document   Document @relation(fields: [documentId], references: [id])
+}
+
+model Document {
+  id        String       @id @default(cuid())
+  name      String
+  type      DocumentType
+  s3Key     String
+  s3Bucket  String
+  mimeType  String
+  size      Int
+  createdAt DateTime     @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id])
+
+  resume Resume?
+}
+
+model Interview {
+  id          String   @id @default(cuid())
+  scheduledAt DateTime
+  location    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }
